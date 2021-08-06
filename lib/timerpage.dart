@@ -241,7 +241,7 @@ class _TimerPageState extends State<TimerPage> {
                       leading: Container(
                           alignment: Alignment.center,
                           width: 30,
-                          child: Text('$runningindex}',
+                          child: Text('$runningindex',
                               style: TextStyle(
                                   color: Colors.white, fontSize: 20))),
                       title: Row(children: [

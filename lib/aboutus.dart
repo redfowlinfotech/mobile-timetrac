@@ -49,7 +49,7 @@ class AboutScreen extends StatelessWidget {
               InkWell(
                   onTap: () async {
                     try {
-                      await launch('http://redfowlinfotech.com/');
+                      await launch('https://www.redfowlinfotech.com/');
                     } catch (e) {}
                   },
                   child: Row(

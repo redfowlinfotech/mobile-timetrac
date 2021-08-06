@@ -13,6 +13,7 @@ import 'addlist.dart';
 import 'edittask.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:showcaseview/showcaseview.dart';
+import 'addlistshowcase.dart';
 
 var login;
 void main() async {
@@ -29,14 +30,32 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'TimeTrac',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: login == null ? OnBoardingPage() : MyHomePage());
+      debugShowCheckedModeBanner: false,
+      title: 'TimeTrac',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: login == null
+          ? OnBoardingPage()
+          : ShowCaseWidget(
+              onStart: (index, key) {
+                showcasestart = true;
+                print('onStart: $index, $key');
+              },
+              onComplete: (index, key) {
+                showcasestart = false;
+                print('onComplete: $index, $key');
+              },
+              builder: Builder(builder: (context) => MyHomePage()),
+              autoPlay: false,
+              autoPlayDelay: Duration(seconds: 3),
+              autoPlayLockEnable: false,
+            ),
+    );
   }
 }
+
+bool showcasestart = true;
 
 class MyHomePage extends StatefulWidget {
   @override
@@ -57,10 +76,6 @@ class MyHomePageState extends State<MyHomePage> {
   // TextEditingController textcontroller = TextEditingController();
   final FlutterTts flutterTts = FlutterTts();
   GlobalKey _one = GlobalKey();
-  GlobalKey _two = GlobalKey();
-  GlobalKey _three = GlobalKey();
-  GlobalKey _four = GlobalKey();
-  GlobalKey _five = GlobalKey();
 
   void timer(int index) {
     int temptime = int.parse(todolist[index][1]);
@@ -152,19 +167,26 @@ class MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     getlist();
+    displayShowCase();
     focusNode = FocusNode();
   }
 
+  bool a;
   displayShowCase() async {
-    preferences = await SharedPreferences.getInstance();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      a = prefs.getBool('showcase');
+    });
 
-    bool showCaseVisibilityStatus = preferences.getBool("displayShowCase");
-    if (showCaseVisibilityStatus == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) =>
-          ShowCaseWidget.of(context)
-              .startShowCase([_one, _two, _three, _four, _five]));
-      preferences.setBool("displayShowCase", false);
+    if (a == null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => ShowCaseWidget.of(context).startShowCase([_one]));
     }
+  }
+
+  saveshowcase() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setBool('showcase', true);
   }
 
   static void storelist() async {
@@ -702,31 +724,74 @@ class MyHomePageState extends State<MyHomePage> {
                 : Container(),
           ]),
         ),
-        floatingActionButton: OpenContainer(
-          transitionType: _transitionType,
-          openBuilder: (BuildContext context, VoidCallback _) {
-            return AddList(this);
-          },
-          closedElevation: 6.0,
-          closedShape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(
-              Radius.circular(_fabDimension / 2),
-            ),
-          ),
-          closedColor: Colors.white,
-          closedBuilder: (BuildContext context, VoidCallback openContainer) {
-            return SizedBox(
-              height: _fabDimension,
-              width: _fabDimension,
-              child: Center(
-                child: Icon(
-                  Icons.add,
-                  color: Colors.blue,
+        floatingActionButton: showcasestart
+            ? Showcase(
+                key: _one,
+                title: 'Tap here',
+                description: 'to add a task',
+                onTargetClick: () {
+                  setState(() {
+                    showcasestart = false;
+                  });
+                },
+                disposeOnTap: true,
+                child: OpenContainer(
+                  transitionType: _transitionType,
+                  openBuilder: (BuildContext context, VoidCallback _) {
+                    return AddList(this);
+                  },
+                  closedElevation: 6.0,
+                  closedShape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(_fabDimension / 2),
+                    ),
+                  ),
+                  closedColor: Colors.white,
+                  closedBuilder:
+                      (BuildContext context, VoidCallback openContainer) {
+                    return SizedBox(
+                      height: _fabDimension,
+                      width: _fabDimension,
+                      child: Center(
+                        child: Icon(
+                          Icons.add,
+                          color: Colors.black,
+                        ),
+                      ),
+                    );
+                  },
+                ))
+            : OpenContainer(
+                transitionType: _transitionType,
+                openBuilder: (BuildContext context, VoidCallback _) {
+                  if (a == null) {
+                    saveshowcase();
+                    return AddListShowcase(this);
+                  } else {
+                    return AddList(this);
+                  }
+                },
+                closedElevation: 6.0,
+                closedShape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(_fabDimension / 2),
+                  ),
                 ),
-              ),
-            );
-          },
-        ));
+                closedColor: Colors.white,
+                closedBuilder:
+                    (BuildContext context, VoidCallback openContainer) {
+                  return SizedBox(
+                    height: _fabDimension,
+                    width: _fabDimension,
+                    child: Center(
+                      child: Icon(
+                        Icons.add,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  );
+                },
+              ));
   }
 
   ContainerTransitionType _transitionType = ContainerTransitionType.fade;
